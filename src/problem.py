@@ -38,14 +38,32 @@ class SearchProblem(ABC, Generic[T]):
 
 
 class SimpleSearchProblem(SearchProblem[WorldState]):
+
     def is_goal_state(self, state: WorldState) -> bool:
-        raise NotImplementedError()
+        exit_pos = set(self.world.exit_pos)
+        return (set(state.agents_positions) | exit_pos) == exit_pos 
 
     def get_successors(self, state: WorldState) -> Iterable[Tuple[WorldState, Tuple[Action, ...], float]]:
-        # - N'oubliez pas de jeter un oeil aux méthodes de a classe World (set_state, done, step, available_actions, ...)
-        # - Vous aurez aussi peut-être besoin de `from itertools import product`
+        # - N'oubliez pas de jeter un oeil aux méthodes de la classe World (set_state, done, step, available_actions, ...)
+        # - Vous aurez aussi peut-être besoin de `from itertools import product`        
+        sol = [] # [(State1, (action,), 1.0), (State2, (action,), 1.0), ...)]
+        
+        print(state.agents_positions)
+        print(self.world.available_actions())
+
+        for actions in self.world.available_actions():
+            partial_sol = []
+            for action in actions:
+                self.world.set_state(state)
+                self.world.step([action])
+                partial_sol.append((self.world.get_state(), actions, 1.0))
+            sol.append(partial_sol)
+        
+        print(sol)
+
         self.nodes_expanded += 1
-        raise NotImplementedError()
+        return sol
+
 
     def heuristic(self, state: WorldState) -> float:
         """Manhattan distance for each agent to its goal"""
