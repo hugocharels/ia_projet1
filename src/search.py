@@ -17,7 +17,11 @@ class Solution:
 
 
 def dfs(problem: SearchProblem) -> Optional[Solution]:
-    ...
+    
+
+    sol = Solution(actions=[])
+    return sol
+
 
 
 def bfs(problem: SearchProblem) -> Optional[Solution]:

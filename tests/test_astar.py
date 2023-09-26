@@ -1,5 +1,5 @@
 from lle import World, Action
-from search import ProblemState, astar
+from search import astar
 from problem import SimpleSearchProblem
 
 from .utils import check_world_done
