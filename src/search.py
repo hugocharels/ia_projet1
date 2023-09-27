@@ -42,7 +42,7 @@ def search(problem: SearchProblem, Frontier: Generic) -> Optional[Solution]:
 		else: all_state.add(state)
 		for next_state, next_actions, next_reward in problem.get_successors(state):
 			if next_state in all_state or (len(actions) > 0 and is_useless(next_actions, actions[-1])): continue
-			frontier.put((next_state, actions + [next_actions], reward + next_reward))
+			frontier.put((next_state, actions + [next_actions], next_reward - reward))
 	return None
 
 def dfs(problem: SearchProblem) -> Optional[Solution]:
@@ -57,13 +57,14 @@ def astar(problem: SearchProblem) -> Optional[Solution]:
 	all_state = set()
 	while not heap.isEmpty():
 		state, actions, reward = heap.pop()
-		if problem.is_goal_state(state):
-			return Solution(actions=actions, reward=reward)
 		if state in all_state: continue
 		else: all_state.add(state)
+		if problem.is_goal_state(state):
+			return Solution(actions=actions, reward=reward)
 		for next_state, next_actions, next_reward in problem.get_successors(state):
 			if len(actions) > 0 and is_useless(next_actions, actions[-1]): continue
-			heap.push((next_state, actions + [next_actions], reward + next_reward),
-					  reward + next_reward + problem.heuristic(next_state))
+			heap.push((next_state, actions + [next_actions], next_reward + reward),
+					  next_reward + reward + problem.heuristic(next_state))
+			#		  next_reward + reward)
+			#		  reward + problem.heuristic(next_state))
 	return None
-

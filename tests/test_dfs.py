@@ -61,6 +61,11 @@ def test_2_agents_zigzag():
     world = World.from_file("cartes/2_agents/zigzag")
     problem = SimpleSearchProblem(world)
     solution = dfs(problem)
+    """
+    import cv2
+    img = world.get_image()
+    cv2.imwrite('world.png', img)
+    """
     assert solution.n_steps == 23
     check_world_done(problem, solution)
 

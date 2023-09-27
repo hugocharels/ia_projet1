@@ -23,6 +23,16 @@ class SearchProblem(ABC, Generic[T]):
 	def is_goal_state(self, problem_state: T) -> bool:
 		"""Whether the given state is the goal state"""
 
+	@staticmethod
+	def _get_all_actions(actions: Iterable[Tuple[Action, ...]]) -> Iterable[Tuple[Action, ...]]:
+		"""Yield all possible joint actions from the given list of actions"""
+		if not actions:
+			yield ()
+		else:
+			for action in actions[0]:
+				for next_actions in SimpleSearchProblem._get_all_actions(actions[1:]):
+					yield (action,) + next_actions
+
 	@abstractmethod
 	def get_successors(self, state: T) -> Iterable[Tuple[T, Tuple[Action, ...], float]]:
 		"""
@@ -45,31 +55,28 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 		self.world.set_state(tmp)
 		return ret
 
-	def _get_all_actions(self, actions: Iterable[Tuple[Action, ...]]) -> Iterable[Tuple[Action, ...]]:
-		"""Yield all possible joint actions from the given list of actions"""
-		if not actions:
-			yield ()
-		else:
-			for action in actions[0]:
-				for next_actions in self._get_all_actions(actions[1:]):
-					yield (action,) + next_actions
-
 	def get_successors(self, state: WorldState) -> Iterable[Tuple[WorldState, Tuple[Action, ...], float]]:
 		tmp = self.world.get_state()
 		self.world.set_state(state)
 		for possible_action in self._get_all_actions(self.world.available_actions()):
-			if not self.world.done:
-				reward = self.world.step(possible_action)
-				yield (self.world.get_state(), possible_action, reward)
-				self.world.set_state(state)
+			if self.world.done: continue
+			reward = self.world.step(possible_action)
+			#print(reward, self.world.exit_rate)
+			yield (self.world.get_state(), possible_action, (1 - self.world.exit_rate) * 2 + (2 - reward) * 1)
+			#yield (self.world.get_state(), possible_action, 1 - self.world.exit_rate)
+			self.world.set_state(state)
 		self.world.set_state(tmp)
 		self.nodes_expanded += 1
+
+	@staticmethod
+	def _manhattan_distance(pos1, pos2):
+		return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 	def heuristic(self, state: WorldState) -> float:
 		"""Manhattan distance for each agent to its goal"""
 		exit_pos = self.world.exit_pos
-		agent_pos = state.agents_positions
-		return sum(abs(agent[0] - exit[0]) + abs(agent[1] - exit[1]) for agent, exit in zip(agent_pos, exit_pos))
+		agents_pos = state.agents_positions
+		return sum(self._manhattan_distance(agents_pos[i], exit_pos[i]) for i in range(len(exit_pos)-1))/len(agents_pos)
 
 
 class CornerProblemState:
@@ -85,12 +92,13 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 	def is_goal_state(self, state: CornerProblemState) -> bool:
 		raise NotImplementedError()
 
-	def heuristic(self, problem_state: CornerProblemState) -> float:
-		raise NotImplementedError()
-
 	def get_successors(self, state: CornerProblemState) -> Iterable[Tuple[CornerProblemState, Action, float]]:
 		self.nodes_expanded += 1
 		raise NotImplementedError()
+
+	def heuristic(self, problem_state: CornerProblemState) -> float:
+		raise NotImplementedError()
+
 
 
 class GemProblemState:
