@@ -18,6 +18,18 @@ class Solution:
     ...
 
 
+def are_opposites(action1: Action, action2: Action) -> bool:
+    return action1 == Action.NORTH and action2 == Action.SOUTH or \
+           action1 == Action.SOUTH and action2 == Action.NORTH or \
+           action1 == Action.WEST and action2 == Action.EAST or \
+           action1 == Action.EAST and action2 == Action.WEST
+
+def is_useless(moves: Tuple[Action, ...], last_move: Tuple[Action, ...]) -> bool:
+    for i in range(len(moves)):
+        if moves[i] == Action.STAY: continue
+        if not are_opposites(moves[i], last_move[i]): return False
+    return True
+
 def dfs(problem: SearchProblem) -> Optional[Solution]:
     
 
@@ -32,15 +44,11 @@ def bfs(problem: SearchProblem) -> Optional[Solution]:
     max_move = problem.world.width * problem.world.height
     while not queue.empty():
         state, actions, reward = queue.get()
-        if len(actions) > max_move: continue
         if problem.is_goal_state(state):
             return Solution(actions=actions, reward=reward)
-        # print("-----------------")
-        # print("bfs : ", state, actions, reward)
+        if len(actions) > max_move: continue
         for next_state, next_actions, next_reward in problem.get_successors(state):
-            for e in next_actions:
-                if e != Action.STAY: break
-            else: continue
+            if len(actions) > 0 and is_useless(next_actions, actions[-1]): continue
             queue.put((next_state, actions + [next_actions], reward + next_reward))
     return None
 
