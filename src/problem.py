@@ -36,7 +36,6 @@ class SearchProblem(ABC, Generic[T]):
     def heuristic(self, problem_state: T) -> float:
         return 0.0
 
-
 class SimpleSearchProblem(SearchProblem[WorldState]):
 
     def is_goal_state(self, state: WorldState) -> bool:
@@ -65,7 +64,9 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 
     def heuristic(self, state: WorldState) -> float:
         """Manhattan distance for each agent to its goal"""
-        raise NotImplementedError()
+        exit_pos = self.world.exit_pos
+        agent_pos = state.agents_positions
+        return sum(abs(agent[0] - exit[0]) + abs(agent[1] - exit[1]) for agent, exit in zip(agent_pos, exit_pos))
 
 
 class CornerProblemState:
