@@ -55,14 +55,10 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
                     yield (action,) + next_actions
 
     def get_successors(self, state: WorldState) -> Iterable[Tuple[WorldState, Tuple[Action, ...], float]]:
-        # - N'oubliez pas de jeter un oeil aux méthodes de la classe World (set_state, done, step, available_actions, ...)
-        # - Vous aurez aussi peut-être besoin de `from itertools import product`        
         tmp = self.world.get_state()
         self.world.set_state(state)
         for possible_action in self._get_all_actions(self.world.available_actions()):
-            # print(self.world.available_actions(), possible_action)
             reward = self.world.step(possible_action)
-            # print("yield : ", self.world.get_state(), possible_action, reward)
             yield (self.world.get_state(), possible_action, reward)
             self.world.set_state(state)
         self.world.set_state(tmp)
