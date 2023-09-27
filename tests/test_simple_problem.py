@@ -24,7 +24,7 @@ def test_successors_one_agent():
     agent_pos = ((0, 0), (0, 1), (1, 0))
     for state, action, cost in successors:
         assert action[0] in available
-        assert state.agent_positions[0] in agent_pos
+        assert state.agents_positions[0] in agent_pos
 
 
 def test_successors_one_agent_obstacle():
@@ -41,7 +41,7 @@ def test_successors_one_agent_obstacle():
     agent_pos = ((0, 0), (0, 1))
     for state, action, cost in successors:
         assert action[0] in available
-        assert state.agent_positions[0] in agent_pos
+        assert state.agents_positions[0] in agent_pos
 
 
 def test_successors_two_agents():
@@ -62,5 +62,5 @@ def test_successors_two_agents():
     for state, action, cost in successors:
         assert action[0] in available_1
         assert action[1] in available_2
-        assert state.agent_positions[0] in agent_1_pos
-        assert state.agent_positions[1] in agent_2_pos
+        assert state.agents_positions[0] in agent_1_pos
+        assert state.agents_positions[1] in agent_2_pos
