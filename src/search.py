@@ -4,7 +4,7 @@ from lle import Action
 from problem import SearchProblem
 from typing import Tuple, Iterable, Generic, TypeVar
 from queue import Queue, LifoQueue
-
+from priority_queue import PriorityQueue
 
 @dataclass
 class Solution:
@@ -50,4 +50,15 @@ def bfs(problem: SearchProblem) -> Optional[Solution]:
     return search(problem, Queue)
 
 def astar(problem: SearchProblem) -> Optional[Solution]:
-    return search(problem, Queue)
+    heap = PriorityQueue()
+    heap.push((problem.initial_state, [], 0.0), 0.0)
+    while not heap.isEmpty():
+        state, actions, reward = heap.pop()
+        if problem.is_goal_state(state):
+            return Solution(actions=actions, reward=reward)
+        for next_state, next_actions, next_reward in problem.get_successors(state):
+            if len(actions) > 0 and is_useless(next_actions, actions[-1]): continue
+            heap.push((next_state, actions + [next_actions], reward + next_reward),
+                      reward + next_reward + problem.heuristic(next_state))
+    return None
+
