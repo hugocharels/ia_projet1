@@ -14,7 +14,6 @@ def test_1_agent_empty():
     assert solution.actions.count((Action.SOUTH,)) == 2
     check_world_done(problem, solution)
 
-
 def test_1_agent_zigzag():
     world = World.from_file("cartes/1_agent/zigzag")
     problem = SimpleSearchProblem(world)
@@ -79,3 +78,5 @@ def test_level3():
     problem = SimpleSearchProblem(world)
     solution = bfs(problem)
     check_world_done(problem, solution)
+
+

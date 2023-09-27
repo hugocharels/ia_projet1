@@ -29,8 +29,10 @@ def dfs(problem: SearchProblem) -> Optional[Solution]:
 def bfs(problem: SearchProblem) -> Optional[Solution]:
     queue = Queue()
     queue.put((problem.initial_state, [], 0.0))
+    max_move = problem.world.width * problem.world.height
     while not queue.empty():
         state, actions, reward = queue.get()
+        if len(actions) > max_move: continue
         if problem.is_goal_state(state):
             return Solution(actions=actions, reward=reward)
         # print("-----------------")
