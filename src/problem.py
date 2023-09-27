@@ -39,8 +39,11 @@ class SearchProblem(ABC, Generic[T]):
 class SimpleSearchProblem(SearchProblem[WorldState]):
 
     def is_goal_state(self, state: WorldState) -> bool:
-        exit_pos = set(self.world.exit_pos)
-        return (set(state.agents_positions) | exit_pos) == exit_pos 
+        tmp = self.world.get_state()
+        self.world.set_state(state)
+        ret = self.world.exit_rate == 1.0
+        self.world.set_state(tmp)
+        return ret
 
     def _get_all_actions(self, actions: Iterable[Tuple[Action, ...]]) -> Iterable[Tuple[Action, ...]]:
         """Yield all possible joint actions from the given list of actions"""
@@ -54,13 +57,16 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
     def get_successors(self, state: WorldState) -> Iterable[Tuple[WorldState, Tuple[Action, ...], float]]:
         # - N'oubliez pas de jeter un oeil aux méthodes de la classe World (set_state, done, step, available_actions, ...)
         # - Vous aurez aussi peut-être besoin de `from itertools import product`        
-        sol = []
+        tmp = self.world.get_state()
+        self.world.set_state(state)
         for possible_action in self._get_all_actions(self.world.available_actions()):
+            # print(self.world.available_actions(), possible_action)
             reward = self.world.step(possible_action)
-            sol.append((self.world.get_state(), possible_action, reward))    
+            # print("yield : ", self.world.get_state(), possible_action, reward)
+            yield (self.world.get_state(), possible_action, reward)
             self.world.set_state(state)
+        self.world.set_state(tmp)
         self.nodes_expanded += 1
-        return sol
 
     def heuristic(self, state: WorldState) -> float:
         """Manhattan distance for each agent to its goal"""
