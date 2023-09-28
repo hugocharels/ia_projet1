@@ -43,6 +43,10 @@ class SearchProblem(ABC, Generic[T]):
 			- the cost of taking the action
 		"""
 
+	@staticmethod
+	def _manhattan_distance(pos1, pos2):
+		return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+
 	def heuristic(self, problem_state: T) -> float:
 		return 0.0
 
@@ -67,10 +71,6 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 			self.world.set_state(state)
 		self.world.set_state(tmp)
 		self.nodes_expanded += 1
-
-	@staticmethod
-	def _manhattan_distance(pos1, pos2):
-		return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 	def heuristic(self, state: WorldState) -> float:
 		"""Manhattan distance for each agent to its goal"""
@@ -141,9 +141,9 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 		self.nodes_expanded += 1
 
 	def heuristic(self, problem_state: CornerProblemState) -> float:
-		return 0.0
-
-
+		"""Better then Manhattan distance"""
+		return min(self._manhattan_distance(agent_pos, corner) for corner in self.corners for agent_pos in problem_state.agents_positions)
+		
 
 class GemProblemState:
 	...
