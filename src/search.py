@@ -60,6 +60,7 @@ def astar(problem: SearchProblem) -> Optional[Solution]:
 		state, actions, reward = heap.pop()
 		if state in all_state: continue
 		else: all_state.add(state)
+		print(state, actions, reward)
 		if problem.is_goal_state(state):
 			return Solution(actions=actions, reward=reward)
 		for next_state, next_actions, next_reward in problem.get_successors(state):

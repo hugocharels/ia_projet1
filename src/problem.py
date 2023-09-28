@@ -43,6 +43,10 @@ class SearchProblem(ABC, Generic[T]):
 			- the cost of taking the action
 		"""
 
+	@abstractmethod
+	def get_cost(self, new_state: T, action: Tuple[Action, ...], steps: float) -> float:
+		"""The cost of the action applied on the new_state"""
+
 	@staticmethod
 	def _manhattan_distance(pos1, pos2):
 		return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
@@ -65,12 +69,15 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 		for possible_action in self._get_all_actions(self.world.available_actions()):
 			if self.world.done: continue
 			reward = self.world.step(possible_action)
-			#print(reward, self.world.exit_rate)
-			#yield (self.world.get_state(), possible_action, (1 - self.world.exit_rate) * 2 + (2 - reward) * 1)
-			yield (self.world.get_state(), possible_action, 1 - self.world.exit_rate)
+			cost = self.get_cost(self.world.get_state(), possible_action, reward)
+			yield (self.world.get_state(), possible_action, cost)
 			self.world.set_state(state)
 		self.world.set_state(tmp)
 		self.nodes_expanded += 1
+
+	def get_cost(self, new_state: WorldState, action: Tuple[Action, ...], steps: float) -> float:
+		win = -500 if self.is_goal_state(new_state) else 0
+		return win + 100 * (1 - self.world.exit_rate) + steps
 
 	def heuristic(self, state: WorldState) -> float:
 		"""Manhattan distance for each agent to its goal"""
@@ -117,6 +124,9 @@ class CornerProblemState:
 	def __eq__(self, other) -> bool:
 		return self.__key() == other.__key()
 
+	def __repr__(self) -> str:
+		return f"CornerProblemState(agent_positions={self._agents_positions}, corner_done={self._corners_done})"
+
 
 class CornerSearchProblem(SearchProblem[CornerProblemState]):
 	def __init__(self, world: World):
@@ -135,10 +145,16 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 			if self.world.done: continue
 			reward = self.world.step(possible_action)
 			state.update(self.world.get_state(), self.corners)
-			yield (state, possible_action, (1 - state.corner_rate) * 2 + 1 - self.world.exit_rate)
+			cost = self.get_cost(possible_action, state, reward)
+			print(possible_action, reward, cost)
+			yield (state, possible_action, cost)
 			self.world.set_state(world_state)
 		self.world.set_state(tmp)
 		self.nodes_expanded += 1
+
+	def get_cost(self, action: Tuple[Action, ...], state: CornerProblemState, steps: float) -> float:
+		win = -500 if self.is_goal_state(state) else 0
+		return win + 100 * state.corner_rate + steps
 
 	def heuristic(self, problem_state: CornerProblemState) -> float:
 		"""Better then Manhattan distance"""
