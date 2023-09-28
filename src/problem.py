@@ -88,13 +88,13 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 
 class CornerProblemState:
 	
-	def __init__(self, agents_positions: List[Position], corners_done: List[Position]):
-		self._agents_positions = agents_positions
+	def __init__(self, world_state: WorldState, corners_done: List[Position]):
+		self._world_state = world_state
 		self._corners_done = corners_done
 
 	@property
 	def agents_positions(self) -> List[Position]:
-		return self._agents_positions
+		return self._world_state.agents_positions
 
 	@property
 	def corners_done(self) -> List[Position]:
@@ -105,18 +105,19 @@ class CornerProblemState:
 		return 1/(5-len(self._corners_done)) if len(self._corners_done) > 0 else 0.0
 
 	def _update_corners(self, corners: List[Position]) -> None:
-		for agent_pos in self._agents_positions: 
+		for agent_pos in self.agents_positions: 
 			if agent_pos in corners and agent_pos not in self._corners_done: self._corners_done.append(agent_pos)
 
 	def update(self, world_state: WorldState, corners: List[Position]) -> None:
-		self._agents_positions = world_state.agents_positions
+		self._world_state = world_state
 		self._update_corners(corners)
 
-	def get_world_state(self) -> WorldState:
-		return WorldState(self._agents_positions, [])
+	@property
+	def world_state(self) -> WorldState:
+		return self._world_state
 
 	def __key(self):
-		return (tuple(self._agents_positions), tuple(self._corners_done))
+		return (tuple(self.agents_positions), tuple(self._corners_done))
 
 	def __hash__(self) -> int:
 		return hash(self.__key())
@@ -125,21 +126,20 @@ class CornerProblemState:
 		return self.__key() == other.__key()
 
 	def __repr__(self) -> str:
-		return f"CornerProblemState(agent_positions={self._agents_positions}, corner_done={self._corners_done})"
-
+		return f"CornerProblemState(agent_positions={self.agents_positions}, corner_done={self._corners_done})"
 
 class CornerSearchProblem(SearchProblem[CornerProblemState]):
 	def __init__(self, world: World):
 		super().__init__(world)
 		self.corners = [(0, 0), (0, world.width - 1), (world.height - 1, 0), (world.height - 1, world.width - 1)]
-		self.initial_state = CornerProblemState(world.agents_positions, [])
+		self.initial_state = CornerProblemState(world.get_state(), [])
 
 	def is_goal_state(self, state: CornerProblemState) -> bool:
 		return set(state.corners_done) == self.corners and set(state.agents_positions) == set(self.world.exit_pos)
 
 	def get_successors(self, state: CornerProblemState) -> Iterable[Tuple[CornerProblemState, Action, float]]:
 		tmp = self.world.get_state()
-		world_state = state.get_world_state()
+		world_state = state.world_state
 		self.world.set_state(world_state)
 		for possible_action in self._get_all_actions(self.world.available_actions()):
 			if self.world.done: continue
