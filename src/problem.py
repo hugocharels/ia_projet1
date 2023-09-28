@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, Iterable, Generic, TypeVar
-from lle import World, Action, WorldState
+from typing import List, Tuple, Iterable, Generic, TypeVar
+from lle import World, Action, WorldState, Position
 
 
 T = TypeVar("T")
@@ -62,8 +62,8 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 			if self.world.done: continue
 			reward = self.world.step(possible_action)
 			#print(reward, self.world.exit_rate)
-			yield (self.world.get_state(), possible_action, (1 - self.world.exit_rate) * 2 + (2 - reward) * 1)
-			#yield (self.world.get_state(), possible_action, 1 - self.world.exit_rate)
+			#yield (self.world.get_state(), possible_action, (1 - self.world.exit_rate) * 2 + (2 - reward) * 1)
+			yield (self.world.get_state(), possible_action, 1 - self.world.exit_rate)
 			self.world.set_state(state)
 		self.world.set_state(tmp)
 		self.nodes_expanded += 1
@@ -80,24 +80,68 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 
 
 class CornerProblemState:
-	...
+	
+	def __init__(self, agents_positions: List[Position], corners_done: List[Position]):
+		self._agents_positions = agents_positions
+		self._corners_done = corners_done
+
+	@property
+	def agents_positions(self) -> List[Position]:
+		return self._agents_positions
+
+	@property
+	def corners_done(self) -> List[Position]:
+		return self._corners_done
+
+	@property
+	def corner_rate(self) -> float:
+		return 1/(5-len(self._corners_done)) if len(self._corners_done) > 0 else 0.0
+
+	def _update_corners(self, corners: List[Position]) -> None:
+		for agent_pos in self._agents_positions: 
+			if agent_pos in corners and agent_pos not in self._corners_done: self._corners_done.append(agent_pos)
+
+	def update(self, world_state: WorldState, corners: List[Position]) -> None:
+		self._agents_positions = world_state.agents_positions
+		self._update_corners(corners)
+
+	def get_world_state(self) -> WorldState:
+		return WorldState(self._agents_positions, [])
+
+	def __key(self):
+		return (tuple(self._agents_positions), tuple(self._corners_done))
+
+	def __hash__(self) -> int:
+		return hash(self.__key())
+
+	def __eq__(self, other) -> bool:
+		return self.__key() == other.__key()
 
 
 class CornerSearchProblem(SearchProblem[CornerProblemState]):
 	def __init__(self, world: World):
 		super().__init__(world)
 		self.corners = [(0, 0), (0, world.width - 1), (world.height - 1, 0), (world.height - 1, world.width - 1)]
-		self.initial_state = ...
+		self.initial_state = CornerProblemState(world.agents_positions, [])
 
 	def is_goal_state(self, state: CornerProblemState) -> bool:
-		raise NotImplementedError()
+		return set(state.corners_done) == self.corners and set(state.agents_positions) == set(self.world.exit_pos)
 
 	def get_successors(self, state: CornerProblemState) -> Iterable[Tuple[CornerProblemState, Action, float]]:
+		tmp = self.world.get_state()
+		world_state = state.get_world_state()
+		self.world.set_state(world_state)
+		for possible_action in self._get_all_actions(self.world.available_actions()):
+			if self.world.done: continue
+			reward = self.world.step(possible_action)
+			state.update(self.world.get_state(), self.corners)
+			yield (state, possible_action, (1 - state.corner_rate) * 2 + 1 - self.world.exit_rate)
+			self.world.set_state(world_state)
+		self.world.set_state(tmp)
 		self.nodes_expanded += 1
-		raise NotImplementedError()
 
 	def heuristic(self, problem_state: CornerProblemState) -> float:
-		raise NotImplementedError()
+		return 0.0
 
 
 
