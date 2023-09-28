@@ -6,6 +6,41 @@ from lle import World, Action, WorldState, Position
 T = TypeVar("T")
 
 
+class ProblemState(ABC, Generic[T]):
+	"""
+	A Problem State is a state that can be used in a search problem.
+
+	The generic parameter T is the type of the problem state, which must inherit from ProblemState.
+	"""
+
+	def __init__(self, world_state: WorldState):
+		self._world_state = world_state
+
+	@property
+	def world_state(self) -> WorldState:
+		return self._world_state
+
+	@property
+	def agents_positions(self) -> List[Position]:
+		return self._world_state.agents_positions
+
+	def __key(self):
+		return tuple(self.world_state.agents_positions)
+
+	def __hash__(self) -> int:
+		"""The hash of the state"""
+		return hash(self.__key())
+
+	def __eq__(self, other) -> bool:
+		"""Whether the state is equal to the other state"""
+		return self.__key() == other.__key()
+
+	@abstractmethod
+	def __repr__(self) -> str:
+		"""The string representation of the state"""
+		return f"ProblemState(world_state={self.world_state})"
+
+
 class SearchProblem(ABC, Generic[T]):
 	"""
 	A Search Problem is a problem that can be solved by a search algorithm.
@@ -86,15 +121,11 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 		return sum(self._manhattan_distance(agents_pos[i], exit_pos[i]) for i in range(len(exit_pos)-1))/len(agents_pos)
 
 
-class CornerProblemState:
+class CornerProblemState(ProblemState):
 	
-	def __init__(self, world_state: WorldState, corners_done: List[Position]):
-		self._world_state = world_state
-		self._corners_done = corners_done
-
-	@property
-	def agents_positions(self) -> List[Position]:
-		return self._world_state.agents_positions
+	def __init__(self, world_state: WorldState):
+		super().__init__(world_state)
+		self._corners_done = []
 
 	@property
 	def corners_done(self) -> List[Position]:
@@ -102,22 +133,20 @@ class CornerProblemState:
 
 	@property
 	def corner_rate(self) -> float:
-		return 1/(5-len(self._corners_done)) if len(self._corners_done) > 0 else 0.0
+		#print("rate : ", self._corners_done, " ,", self.agents_positions)
+		return len(self._corners_done)/len(self.agents_positions)
 
 	def _update_corners(self, corners: List[Position]) -> None:
 		for agent_pos in self.agents_positions: 
 			if agent_pos in corners and agent_pos not in self._corners_done: self._corners_done.append(agent_pos)
 
-	def update(self, world_state: WorldState, corners: List[Position]) -> None:
-		self._world_state = world_state
-		self._update_corners(corners)
-
-	@property
-	def world_state(self) -> WorldState:
-		return self._world_state
+	def get_new_state(self, world_state: WorldState, corners: List[Position]) -> 'CornerProblemState':
+		new_state = CornerProblemState(world_state)
+		new_state._update_corners(corners)
+		return new_state
 
 	def __key(self):
-		return (tuple(self.agents_positions), tuple(self._corners_done))
+		return self._world_state, tuple(self._corners_done)
 
 	def __hash__(self) -> int:
 		return hash(self.__key())
@@ -131,30 +160,28 @@ class CornerProblemState:
 class CornerSearchProblem(SearchProblem[CornerProblemState]):
 	def __init__(self, world: World):
 		super().__init__(world)
+		self.initial_state = CornerProblemState(world.get_state())
 		self.corners = [(0, 0), (0, world.width - 1), (world.height - 1, 0), (world.height - 1, world.width - 1)]
-		self.initial_state = CornerProblemState(world.get_state(), [])
 
 	def is_goal_state(self, state: CornerProblemState) -> bool:
 		return set(state.corners_done) == self.corners and set(state.agents_positions) == set(self.world.exit_pos)
 
 	def get_successors(self, state: CornerProblemState) -> Iterable[Tuple[CornerProblemState, Action, float]]:
 		tmp = self.world.get_state()
-		world_state = state.world_state
-		self.world.set_state(world_state)
+		self.world.set_state(state.world_state)
 		for possible_action in self._get_all_actions(self.world.available_actions()):
 			if self.world.done: continue
 			reward = self.world.step(possible_action)
-			state.update(self.world.get_state(), self.corners)
+			new_state = state.get_new_state(self.world.get_state(), self.corners)
 			cost = self.get_cost(possible_action, state, reward)
-			print(possible_action, reward, cost)
-			yield (state, possible_action, cost)
-			self.world.set_state(world_state)
+			yield (new_state, possible_action, cost)
+			self.world.set_state(state.world_state)
 		self.world.set_state(tmp)
 		self.nodes_expanded += 1
 
 	def get_cost(self, action: Tuple[Action, ...], state: CornerProblemState, steps: float) -> float:
 		win = -500 if self.is_goal_state(state) else 0
-		return win + 100 * state.corner_rate + steps
+		return win - 100 * state.corner_rate + steps
 
 	def heuristic(self, problem_state: CornerProblemState) -> float:
 		"""Better then Manhattan distance"""
