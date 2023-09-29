@@ -1,44 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Iterable, Generic, TypeVar
-from lle import World, Action, WorldState, Position
-
+from typing import Tuple, Iterable, Generic, TypeVar
+from lle import World, Action, WorldState
+from frontier import override, Node
 
 T = TypeVar("T")
-
-
-class ProblemState(ABC, Generic[T]):
-	"""
-	A Problem State is a state that can be used in a search problem.
-
-	The generic parameter T is the type of the problem state, which must inherit from ProblemState.
-	"""
-
-	def __init__(self, world_state: WorldState):
-		self._world_state = world_state
-
-	@property
-	def world_state(self) -> WorldState:
-		return self._world_state
-
-	@property
-	def agents_positions(self) -> List[Position]:
-		return self._world_state.agents_positions
-
-	def __key(self):
-		return tuple(self.world_state.agents_positions)
-
-	def __hash__(self) -> int:
-		"""The hash of the state"""
-		return hash(self.__key())
-
-	def __eq__(self, other) -> bool:
-		"""Whether the state is equal to the other state"""
-		return self.__key() == other.__key()
-
-	@abstractmethod
-	def __repr__(self) -> str:
-		"""The string representation of the state"""
-		return f"ProblemState(world_state={self.world_state})"
 
 
 class SearchProblem(ABC, Generic[T]):
@@ -78,115 +43,69 @@ class SearchProblem(ABC, Generic[T]):
 			- the cost of taking the action
 		"""
 
-	@abstractmethod
-	def get_cost(self, new_state: T, action: Tuple[Action, ...], steps: float) -> float:
-		"""The cost of the action applied on the new_state"""
+	def f(self, problem_state: T, *args):
+		return self.g(problem_state, *args) + self.heuristic(problem_state)
 
-	@staticmethod
-	def _manhattan_distance(pos1, pos2):
-		return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+	@abstractmethod
+	def g(self, problem_state: T, *args) -> float:
+		"""The cost of reaching the given state"""
 
 	def heuristic(self, problem_state: T) -> float:
 		return 0.0
+
 
 class SimpleSearchProblem(SearchProblem[WorldState]):
 
 	def is_goal_state(self, state: WorldState) -> bool:
 		tmp = self.world.get_state()
 		self.world.set_state(state)
-		ret = self.world.exit_rate == 1.0
+		is_goal = self.world.exit_rate == 1.0
 		self.world.set_state(tmp)
-		return ret
+		return is_goal
 
 	def get_successors(self, state: WorldState) -> Iterable[Tuple[WorldState, Tuple[Action, ...], float]]:
-		tmp = self.world.get_state()
+		tmp_state = self.world.get_state()
 		self.world.set_state(state)
-		for possible_action in self._get_all_actions(self.world.available_actions()):
-			if self.world.done: continue
-			reward = self.world.step(possible_action)
-			cost = self.get_cost(self.world.get_state(), possible_action, reward)
-			yield (self.world.get_state(), possible_action, cost)
+		if self.world.done: return []
+		for action in self._get_all_actions(self.world.available_actions()):
+			cost = self.world.step(action)
+			new_state = self.world.get_state()
+			yield (new_state, action, cost)
 			self.world.set_state(state)
-		self.world.set_state(tmp)
+		self.world.set_state(tmp_state)
 		self.nodes_expanded += 1
 
-	def get_cost(self, new_state: WorldState, action: Tuple[Action, ...], steps: float) -> float:
-		win = -500 if self.is_goal_state(new_state) else 0
-		return win + 100 * (1 - self.world.exit_rate) + steps
+	@override(SearchProblem)
+	def g(self, state: WorldState, cost: float) -> float:
+		win = -500 if self.is_goal_state(state) else 0
+		return win + 100 * (1 - self.world.exit_rate) + cost
 
+	@override(SearchProblem)
 	def heuristic(self, state: WorldState) -> float:
-		"""Manhattan distance for each agent to its goal"""
-		exit_pos = self.world.exit_pos
-		agents_pos = state.agents_positions
-		return sum(self._manhattan_distance(agents_pos[i], exit_pos[i]) for i in range(len(exit_pos)-1))/len(agents_pos)
+		"""Manhattan distance for each agent to the closest exit"""
+		return 0.0
 
 
-class CornerProblemState(ProblemState):
-	
-	def __init__(self, world_state: WorldState):
-		super().__init__(world_state)
-		self._corners_done = []
+class CornerProblemState:
+	...
 
-	@property
-	def corners_done(self) -> List[Position]:
-		return self._corners_done
-
-	@property
-	def corner_rate(self) -> float:
-		#print("rate : ", self._corners_done, " ,", self.agents_positions)
-		return len(self._corners_done)/len(self.agents_positions)
-
-	def _update_corners(self, corners: List[Position]) -> None:
-		for agent_pos in self.agents_positions: 
-			if agent_pos in corners and agent_pos not in self._corners_done: self._corners_done.append(agent_pos)
-
-	def get_new_state(self, world_state: WorldState, corners: List[Position]) -> 'CornerProblemState':
-		new_state = CornerProblemState(world_state)
-		new_state._update_corners(corners)
-		return new_state
-
-	def __key(self):
-		return self._world_state, tuple(self._corners_done)
-
-	def __hash__(self) -> int:
-		return hash(self.__key())
-
-	def __eq__(self, other) -> bool:
-		return self.__key() == other.__key()
-
-	def __repr__(self) -> str:
-		return f"CornerProblemState(agent_positions={self.agents_positions}, corner_done={self._corners_done})"
 
 class CornerSearchProblem(SearchProblem[CornerProblemState]):
 	def __init__(self, world: World):
 		super().__init__(world)
-		self.initial_state = CornerProblemState(world.get_state())
 		self.corners = [(0, 0), (0, world.width - 1), (world.height - 1, 0), (world.height - 1, world.width - 1)]
+		self.initial_state = ...
 
 	def is_goal_state(self, state: CornerProblemState) -> bool:
-		return set(state.corners_done) == self.corners and set(state.agents_positions) == set(self.world.exit_pos)
-
-	def get_successors(self, state: CornerProblemState) -> Iterable[Tuple[CornerProblemState, Action, float]]:
-		tmp = self.world.get_state()
-		self.world.set_state(state.world_state)
-		for possible_action in self._get_all_actions(self.world.available_actions()):
-			if self.world.done: continue
-			reward = self.world.step(possible_action)
-			new_state = state.get_new_state(self.world.get_state(), self.corners)
-			cost = self.get_cost(possible_action, state, reward)
-			yield (new_state, possible_action, cost)
-			self.world.set_state(state.world_state)
-		self.world.set_state(tmp)
-		self.nodes_expanded += 1
-
-	def get_cost(self, action: Tuple[Action, ...], state: CornerProblemState, steps: float) -> float:
-		win = -500 if self.is_goal_state(state) else 0
-		return win - 100 * state.corner_rate + steps
+		raise NotImplementedError()
 
 	def heuristic(self, problem_state: CornerProblemState) -> float:
-		"""Better then Manhattan distance"""
-		return min(self._manhattan_distance(agent_pos, corner) for corner in self.corners for agent_pos in problem_state.agents_positions)
-		
+		raise NotImplementedError()
+
+	def get_successors(self, state: CornerProblemState) -> Iterable[Tuple[CornerProblemState, Action, float]]:
+		self.nodes_expanded += 1
+		raise NotImplementedError()
+
 
 class GemProblemState:
 	...
