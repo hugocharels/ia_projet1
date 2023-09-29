@@ -102,11 +102,11 @@ class Node:
 
 	def __hash__(self):
 		return hash(self.__key())
-		
+
 	def get_actions(self):
 		actions = []
 		node = self
 		while node.parent is not None:
 			actions.append(node.action)
 			node = node.parent
-		return tuple(reversed(actions))
+		return list(reversed(actions))

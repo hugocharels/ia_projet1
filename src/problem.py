@@ -78,12 +78,12 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 	@override(SearchProblem)
 	def g(self, state: WorldState, cost: float) -> float:
 		win = -500 if self.is_goal_state(state) else 0
-		return win + 100 * (1 - self.world.exit_rate) + cost
+		return win - 100 * (1 - self.world.exit_rate) + cost
 
 	@override(SearchProblem)
 	def heuristic(self, state: WorldState) -> float:
 		"""Manhattan distance for each agent to the closest exit"""
-		return 0.0
+		return sum(min(abs(agent[0] - exit[0]) + abs(agent[1] - exit[1]) for exit in self.world.exit_pos) for agent in state.agents_positions)
 
 
 class CornerProblemState:

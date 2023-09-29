@@ -17,7 +17,9 @@ class Solution:
 
 
 def global_is_useless(actions : tuple[Action]) -> bool:
-	return all(actions, lambda action : action == Action.STAY)
+	for action in actions:
+		if action != Action.STAY: return False
+	return True
 
 
 def search(problem: SearchProblem, Frontier: type[Stack, Queue, Heap], is_useless=global_is_useless) -> Optional[Solution]:
@@ -31,7 +33,8 @@ def search(problem: SearchProblem, Frontier: type[Stack, Queue, Heap], is_useles
 		if problem.is_goal_state(node.state):
 			return Solution(actions=node.get_actions())
 		for state, action, cost in problem.get_successors(node.state):
-			next_node = Node(node, state, action, node.cost + cost, node.cost + cost + problem.heuristic(state))
+			if is_useless(action): continue
+			next_node = Node(node, state, action, node.cost + problem.g(state, cost), node.cost + problem.f(state, cost))
 			frontier.push(next_node)
 	return None
 
