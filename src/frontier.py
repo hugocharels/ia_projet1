@@ -16,15 +16,15 @@ class Frontier(ABC, Generic[T]):
 
 	@abstractmethod
 	def push(node: T) -> None:
-		""" """
+		""" Add a node to the frontier. """
 
 	@abstractmethod
 	def pop() -> T:
-		""" """
+		""" Remove and return the next node from the frontier. """
 
 	@abstractmethod
 	def is_empty() -> bool:
-		""" """
+		""" Return True if the frontier is empty. """
 
 
 class Stack(Frontier[T]):
