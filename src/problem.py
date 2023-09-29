@@ -81,7 +81,11 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 	@override(SearchProblem)
 	def g(self, state: WorldState, cost: float) -> float:
 		win = -500 if self.is_goal_state(state) else 0
-		return win + 10 * (1 - self.world.exit_rate) + 10 * cost
+		tmp = self.world.get_state()
+		self.world.set_state(state)
+		exit = (1 - self.world.exit_rate)
+		self.world.set_state(tmp)
+		return win + 10 * exit + 10 * cost
 
 	@override(SearchProblem)
 	def heuristic(self, state: WorldState) -> float:
@@ -169,7 +173,12 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 
 	def g(self, state: CornerProblemState, cost: float) -> float:
 		win = -500 if self.is_goal_state(state) else 0
-		return win + 10 * (1 - self.world.exit_rate) + 100 * (1 - state.corners_rate) + 10 * cost
+		tmp = self.world.get_state()
+		self.world.set_state(state.world_state)
+		exit = 1 - self.world.exit_rate
+		self.world.set_state(tmp)
+		corner = 1 - state.corners_rate
+		return win + 10 * exit + 10 * cost if corner == 1.0 else win + 10 * cost + 10 * corner
 
 	def heuristic(self, state: CornerProblemState) -> float:
 		return sum(min(self._manhattan_distance(agent, corner) for corner in self.corners) for agent in state.agents_positions)
