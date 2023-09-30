@@ -48,6 +48,7 @@ def test_1_agent_impossible():
     world = World.from_file("cartes/1_agent/impossible")
     problem = SimpleSearchProblem(world)
     assert astar(problem) is None
+    assert problem.nodes_expanded > 0
 
 
 def test_2_agents_empty():
@@ -63,7 +64,7 @@ def test_2_agents_zigzag():
     world.reset()
     problem = SimpleSearchProblem(world)
     solution = astar(problem)
-    assert solution.n_steps == 15
+    assert solution.n_steps == 12
     check_world_done(problem, solution)
 
 
@@ -71,6 +72,7 @@ def test_2_agents_impossible():
     world = World.from_file("cartes/2_agents/impossible")
     problem = SimpleSearchProblem(world)
     assert astar(problem) is None
+    assert problem.nodes_expanded > 0
 
 
 def test_level3():

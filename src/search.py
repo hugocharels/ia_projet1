@@ -1,74 +1,63 @@
 from dataclasses import dataclass
 from typing import Optional
 from lle import Action
+
 from problem import SearchProblem
-from typing import Tuple, Iterable, Generic, TypeVar
-from queue import Queue, LifoQueue
-from priority_queue import PriorityQueue
+
+from frontier import Stack, Queue, Heap, Node
 
 
 @dataclass
 class Solution:
-	actions: list[Tuple[Action,...]]
-	reward: float = 0
+	actions: list[tuple[Action]]
 
 	@property
 	def n_steps(self) -> int:
 		return len(self.actions)
 
 
-def are_opposites(action1: Action, action2: Action) -> bool:
-	return action1 == Action.NORTH and action2 == Action.SOUTH or \
-		   action1 == Action.SOUTH and action2 == Action.NORTH or \
-		   action1 == Action.WEST and action2 == Action.EAST or \
-		   action1 == Action.EAST and action2 == Action.WEST
+def global_is_useless(_, actions : tuple[Action]) -> bool:
+	for action in actions:
+		if action != Action.STAY: return False
+	return True
 
-def is_useless(moves: Tuple[Action, ...], last_move: Tuple[Action, ...]) -> bool:
-	for i in range(len(moves)):
-		if moves[i] == Action.STAY: continue
-		if not are_opposites(moves[i], last_move[i]): return False
+def is_opposite_move(prev_action: Action, next_action: Action) -> bool:
+	return prev_action == Action.NORTH and next_action == Action.SOUTH or \
+	   prev_action == Action.SOUTH and next_action == Action.NORTH or \
+	   prev_action == Action.WEST and next_action == Action.EAST or \
+	   prev_action == Action.EAST and next_action == Action.WEST
+
+def are_opposite_move(prev_actions: tuple[Action, ...], next_actions: tuple[Action, ...]) -> bool:
+	if prev_actions is None or next_actions is None: return False
+	for i in range(len(next_actions)):
+		if not is_opposite_move(prev_actions[i], next_actions[i]): return False
 	return True
 
 
-def search(problem: SearchProblem, Frontier: Generic) -> Optional[Solution]:
+def search(problem: SearchProblem, Frontier: type[Stack, Queue, Heap], is_useless=global_is_useless) -> Optional[Solution]:
 	frontier = Frontier()
-	frontier.put((problem.initial_state, [], 0.0))
-	all_state = set()
-	while not frontier.empty():
-		state, actions, reward = frontier.get()
-		if problem.is_goal_state(state):
-			return Solution(actions=actions, reward=reward)
-		if state in all_state: continue
-		else: all_state.add(state)
-		for next_state, next_actions, next_reward in problem.get_successors(state):
-			#if next_state in all_state or (len(actions) > 0 and is_useless(next_actions, actions[-1])): continue
-			if next_state in all_state: continue
-			frontier.put((next_state, actions + [next_actions], next_reward + reward))
+	frontier.push(Node(None, problem.initial_state, None, 0))
+	visited = set()
+	while not frontier.is_empty():
+		node = frontier.pop()
+		if node in visited: continue
+		visited.add(node)
+		if problem.is_goal_state(node.state):
+			return Solution(actions=node.get_actions())
+		for state, action, cost in problem.get_successors(node.state):
+			if is_useless(node.action, action): continue
+			next_node = Node(node, state, action, node.cost + problem.g(state, cost), node.cost + problem.f(state, cost))
+			frontier.push(next_node)
 	return None
 
+
 def dfs(problem: SearchProblem) -> Optional[Solution]:
-	return search(problem, LifoQueue)
+	return search(problem, Stack, lambda prev_a, next_a : global_is_useless(prev_a, next_a) or are_opposite_move(prev_a, next_a) )
+
 
 def bfs(problem: SearchProblem) -> Optional[Solution]:
 	return search(problem, Queue)
 
+
 def astar(problem: SearchProblem) -> Optional[Solution]:
-	heap = PriorityQueue()
-	heap.push((problem.initial_state, [], 0.0), 0.0)
-	all_state = set()
-	while not heap.isEmpty():
-		state, actions, reward = heap.pop()
-		if state in all_state: continue
-		else: all_state.add(state)
-		print("----------------------")
-		print(state, actions, reward)
-		if problem.is_goal_state(state):
-			return Solution(actions=actions, reward=reward)
-		for next_state, next_actions, next_reward in problem.get_successors(state):
-			#if len(actions) > 0 and is_useless(next_actions, actions[-1]): continue
-			#if next_state in all_state: continue
-			heap.push((next_state, actions + [next_actions], next_reward + reward),
-					  next_reward + reward + problem.heuristic(next_state))
-			#		  next_reward + reward)
-			#		  reward + problem.heuristic(next_state))
-	return None
+	return search(problem, Heap)
