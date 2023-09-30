@@ -3,6 +3,8 @@ from typing import Tuple, Iterable, Generic, TypeVar
 from lle import World, Action, WorldState
 from frontier import override, Node
 
+from itertools import product
+
 T = TypeVar("T")
 
 
@@ -70,6 +72,7 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 		tmp_state = self.world.get_state()
 		self.world.set_state(state)
 		if self.world.done: return []
+		#for action in product(*self.world.available_actions()):
 		for action in self._get_all_actions(self.world.available_actions()):
 			cost = self.world.step(action)
 			new_state = self.world.get_state()
