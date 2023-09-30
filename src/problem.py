@@ -155,7 +155,7 @@ class CornerProblemState(ProblemState):
 			if corners_pos[i] in self._world_state.agents_positions:
 				if new_corners[i] == False: self._on_corner = True
 				new_corners[i] = True
-		return CornerProblemState(new_world_state, new_corners)
+		return CornerProblemState(new_world_state, new_corners.copy())
 
 
 class CornerSearchProblem(SearchProblem[CornerProblemState]):
@@ -184,7 +184,7 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 		step = 0
 		for action in actions: 
 			if action != Action.STAY: step += 1
-		return win + 10 * cost + 1 * step if state.corners_rate == 1.0 else win + 10 * state.on_corner + 1 * step
+		return win + 10 * (1 - state.on_corner) + 1 * step
 
 	def heuristic(self, state: CornerProblemState) -> float:
 		return sum(min(self._manhattan_distance(agent, corner) for corner in self.corners) for agent in state.agents_positions) \
