@@ -4,7 +4,7 @@ import search
 
 
 w = World.from_file("cartes/2_agents/zigzag")
-w = World.from_file("level3")
+#w = World.from_file("level3")
 #w = World.from_file("level5")
 #w = World.from_file("level6")
 
@@ -13,7 +13,7 @@ w = World.from_file("level3")
 print(w.world_string)
 
 problem = SimpleSearchProblem(w)
-solution = search.dfs(problem)
+solution = search.astar(problem)
 
 if solution is None:
     print("No solution found")

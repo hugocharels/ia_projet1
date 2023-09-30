@@ -184,7 +184,7 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 		step = 0
 		for action in actions: 
 			if action != Action.STAY: step += 1
-		return win + 10 * (1 - state.on_corner) + 1 * step
+		return win - 10 * state.on_corner + 1 * step
 
 	def heuristic(self, state: CornerProblemState) -> float:
 		return sum(min(self._manhattan_distance(agent, corner) for corner in self.corners) for agent in state.agents_positions) \

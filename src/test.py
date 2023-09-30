@@ -4,7 +4,7 @@ from problem import CornerSearchProblem
 from search import astar
 
 
-world = World.from_file("cartes/small_corners")
+world = World.from_file("cartes/corners")
 
 img = world.get_image()
 cv2.imwrite('world.png', img)
