@@ -45,13 +45,14 @@ def search(problem: SearchProblem, Frontier: type[Stack, Queue, Heap], is_useles
 		if problem.is_goal_state(node.state):
 			return Solution(actions=node.get_actions())
 		for state, action, cost in problem.get_successors(node.state):
-			if is_useless(node.action, action): continue
-			next_node = Node(node, state, action, node.cost + problem.g(state, cost), node.cost + problem.f(state, cost))
+			#if is_useless(node.action, action): continue
+			next_node = Node(node, state, action, node.cost + problem.g(state, action, cost), node.cost + problem.f(state, action, cost))
 			frontier.push(next_node)
 	return None
 
 
 def dfs(problem: SearchProblem) -> Optional[Solution]:
+	#return search(problem, Stack, lambda prev_a, next_a : False)
 	return search(problem, Stack, lambda prev_a, next_a : global_is_useless(prev_a, next_a) or are_opposite_move(prev_a, next_a) )
 
 
