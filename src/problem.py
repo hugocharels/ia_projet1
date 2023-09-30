@@ -182,9 +182,9 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 		return win - 10 * state.on_corner + 1 * step
 
 	def heuristic(self, state: CornerProblemState) -> float:
-		return sum(min(self._manhattan_distance(agent, corner) for corner in self.corners) for agent in state.agents_positions) \
+		return max(min(self._manhattan_distance(agent, corner) for corner in self.corners) for agent in state.agents_positions) \
 				if state.corners_rate < 1.0 else \
-				sum(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
+				max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
 
 
 class GemProblemState(ProblemState):
