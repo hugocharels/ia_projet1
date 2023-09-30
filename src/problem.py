@@ -62,14 +62,11 @@ class SearchProblem(ABC, Generic[T]):
 class SimpleSearchProblem(SearchProblem[WorldState]):
 
 	def is_goal_state(self, state: WorldState) -> bool:
-		tmp = self.world.get_state()
 		self.world.set_state(state)
 		is_goal = self.world.exit_rate == 1.0
-		self.world.set_state(tmp)
 		return is_goal
 
 	def get_successors(self, state: WorldState) -> Iterable[Tuple[WorldState, Tuple[Action, ...], float]]:
-		tmp_state = self.world.get_state()
 		self.world.set_state(state)
 		if self.world.done: return []
 		#for action in product(*self.world.available_actions()):
@@ -78,7 +75,6 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 			new_state = self.world.get_state()
 			yield (new_state, action, cost)
 			self.world.set_state(state)
-		self.world.set_state(tmp_state)
 		self.nodes_expanded += 1
 
 	@override(SearchProblem)
@@ -87,12 +83,13 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 		step = 0
 		for action in actions: 
 			if action != Action.STAY: step += 1
-		return win + 10 * cost + 1 * step
+		#return win + 10 * cost + 1 * step
+		return (win - 1 * cost + 1 * step ) * 1
 
 	@override(SearchProblem)
 	def heuristic(self, state: WorldState) -> float:
 		"""Manhattan distance for each agent to the closest exit"""
-		return sum(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
+		return max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
 
 
 
@@ -168,7 +165,6 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 		return state.corners_rate == 1.0 and SimpleSearchProblem(self.world).is_goal_state(state.world_state)
 
 	def get_successors(self, state: CornerProblemState) -> Iterable[Tuple[CornerProblemState, Action, float]]:
-		tmp_state = self.world.get_state()
 		self.world.set_state(state.world_state)
 		if self.world.done: return []
 		for action in self._get_all_actions(self.world.available_actions()):
@@ -176,7 +172,6 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 			new_state = self.world.get_state()
 			yield (state.get_new_state(new_state, self.corners), action, cost)
 			self.world.set_state(state.world_state)
-		self.world.set_state(tmp_state)
 		self.nodes_expanded += 1
 
 	def g(self, state: CornerProblemState, actions: tuple[Action, ...], cost: float) -> float:
@@ -229,7 +224,6 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 		return state.gems_rate == 1.0 and SimpleSearchProblem(self.world).is_goal_state(state.world_state)
 
 	def get_successors(self, state: GemProblemState) -> Iterable[Tuple[GemProblemState, Action, float]]:
-		tmp_state = self.world.get_state()
 		self.world.set_state(state.world_state)
 		if self.world.done: return []
 		for action in self._get_all_actions(self.world.available_actions()):
@@ -237,7 +231,6 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 			new_state = self.world.get_state()
 			yield (GemProblemState(new_state, state), action, cost)
 			self.world.set_state(state.world_state)
-		self.world.set_state(tmp_state)
 		self.nodes_expanded += 1
 
 	def g(self, state: CornerProblemState, actions: tuple[Action, ...], cost: float) -> float:

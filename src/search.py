@@ -42,7 +42,7 @@ def search(problem: SearchProblem, Frontier: type[Stack, Queue, Heap], is_useles
 		node = frontier.pop()
 		if node in visited: continue
 		visited.add(node)
-		print(node, node.priority)
+		#print(node, node.priority)
 		if problem.is_goal_state(node.state):
 			return Solution(actions=node.get_actions())
 		for state, action, cost in problem.get_successors(node.state):
