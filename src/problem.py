@@ -192,22 +192,61 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 				sum(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
 
 
-class GemProblemState:
-	...
+class GemProblemState(ProblemState):
+	
+	def __init__(self, world_state: WorldState, old_state: 'GemProblemState'=None):
+		super().__init__(world_state)
+		if old_state is not None: self._gems_got = old_state.gems_remaining - self.gems_remaining
+
+	@property
+	def gems_got(self) -> float:
+		return self._gems_got
+
+	@property
+	def gems_rate(self) -> float:
+		return sum(self._world_state.gems_collected)/len(self._world_state.gems_collected)
+
+	@property
+	def gems_remaining(self):
+		return len(self._world_state.gems_collected) - sum(self._world_state.gems_collected)
+
+	def __hash__(self):
+		return super.__hash__(self)
+
+	def __eq__(self):
+		return super.__eq__(self)
+
+	def __repr__(self):
+		return f"<GemProblemState {self._world_state}>"
 
 
 class GemSearchProblem(SearchProblem[GemProblemState]):
 	def __init__(self, world: World):
 		super().__init__(world)
-		self.initial_state = ...
+		self.initial_state = GemProblemState(world.get_state())
 
 	def is_goal_state(self, state: GemProblemState) -> bool:
-		raise NotImplementedError()
+		return state.gems_rate == 1.0 and SimpleSearchProblem(self.world).is_goal_state(state.world_state)
 
 	def get_successors(self, state: GemProblemState) -> Iterable[Tuple[GemProblemState, Action, float]]:
+		tmp_state = self.world.get_state()
+		self.world.set_state(state.world_state)
+		if self.world.done: return []
+		for action in self._get_all_actions(self.world.available_actions()):
+			cost = self.world.step(action)
+			new_state = self.world.get_state()
+			yield (GemProblemState(new_state, state), action, cost)
+			self.world.set_state(state.world_state)
+		self.world.set_state(tmp_state)
 		self.nodes_expanded += 1
-		raise NotImplementedError()
+
+	def g(self, state: CornerProblemState, actions: tuple[Action, ...], cost: float) -> float:
+		win = -500 if self.is_goal_state(state) else 0
+		step = 0
+		for action in actions: 
+			if action != Action.STAY: step += 1
+		return win - 10 * state.gems_got + 1 * step
 
 	def heuristic(self, state: GemProblemState) -> float:
 		"""The number of uncollected gems"""
-		raise NotImplementedError()
+		return state.gems_remaining
