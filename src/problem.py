@@ -25,16 +25,6 @@ class SearchProblem(ABC, Generic[T]):
 	def is_goal_state(self, problem_state: T) -> bool:
 		"""Whether the given state is the goal state"""
 
-	@staticmethod
-	def _get_all_actions(actions: Iterable[Tuple[Action, ...]]) -> Iterable[Tuple[Action, ...]]:
-		"""Yield all possible joint actions from the given list of actions"""
-		if not actions:
-			yield ()
-		else:
-			for action in actions[0]:
-				for next_actions in SimpleSearchProblem._get_all_actions(actions[1:]):
-					yield (action,) + next_actions
-
 	@abstractmethod
 	def get_successors(self, state: T) -> Iterable[Tuple[T, Tuple[Action, ...], float]]:
 		"""
@@ -69,14 +59,13 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 	def get_successors(self, state: WorldState) -> Iterable[Tuple[WorldState, Tuple[Action, ...], float]]:
 		self.world.set_state(state)
 		if self.world.done: return []
-		#if product(*self.world.available_actions()) != self._get_all_actions(self.world.available_actions()): print("ta mere")
-		#for action in self._get_all_actions(self.world.available_actions()):
+		self.nodes_expanded += 1
+		self.world.set_state(state)
 		for action in product(*self.world.available_actions()):
 			cost = self.world.step(action)
 			new_state = self.world.get_state()
 			yield (new_state, action, cost)
 			self.world.set_state(state)
-		self.nodes_expanded += 1
 
 	@override(SearchProblem)
 	def g(self, state: WorldState, actions: tuple[Action,...], cost: float) -> float:
@@ -168,13 +157,13 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 	def get_successors(self, state: CornerProblemState) -> Iterable[Tuple[CornerProblemState, Action, float]]:
 		self.world.set_state(state.world_state)
 		if self.world.done: return []
-		for action in self._get_all_actions(self.world.available_actions()):
+		self.nodes_expanded += 1
+		for action in product(*self.world.available_actions()):
 			cost = self.world.step(action)
 			new_state = self.world.get_state()
 			yield (state.get_new_state(new_state, self.corners), action, cost)
 			self.world.set_state(state.world_state)
-		self.nodes_expanded += 1
-
+		
 	def g(self, state: CornerProblemState, actions: tuple[Action, ...], cost: float) -> float:
 		win = -500 if self.is_goal_state(state) else 0
 		step = 0
@@ -227,12 +216,12 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 	def get_successors(self, state: GemProblemState) -> Iterable[Tuple[GemProblemState, Action, float]]:
 		self.world.set_state(state.world_state)
 		if self.world.done: return []
-		for action in self._get_all_actions(self.world.available_actions()):
+		self.nodes_expanded += 1
+		for action in product(*self.world.available_actions()):
 			cost = self.world.step(action)
 			new_state = self.world.get_state()
 			yield (GemProblemState(new_state, state), action, cost)
 			self.world.set_state(state.world_state)
-		self.nodes_expanded += 1
 
 	def g(self, state: CornerProblemState, actions: tuple[Action, ...], cost: float) -> float:
 		win = -500 if self.is_goal_state(state) else 0
