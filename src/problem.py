@@ -122,8 +122,9 @@ class ProblemState(ABC):
 
 
 class CornerProblemState(ProblemState):
-	def __init__(self, world_state: WorldState, corners: list[bool, bool, bool, bool]=[False,False,False,False]):
+	def __init__(self, world_state: WorldState, corners: list[list[bool, bool, bool, bool]]=None):
 		super().__init__(world_state)
+		if conrners is None: self._corners = [[False, False, False, False] for _ in range(len(world_state.agents_positions))]
 		self._corners = corners
 		self._on_corner = False
 
@@ -149,8 +150,13 @@ class CornerProblemState(ProblemState):
 
 	def get_new_state(self, new_world_state, corners_pos):
 		new_corners = self._corners
-		for i in range(len(corners_pos)):
-			if corners_pos[i] in self._world_state.agents_positions:
+		for agent_pos in self._world_state.agents_positions:
+			for i in range(len(corners_pos)):
+				if agent_pos == corners_pos[i]:
+					if 
+					new_corners[i] = True
+
+			if corners_pos[i] in
 				if new_corners[i] == False: self._on_corner = True
 				new_corners[i] = True
 		return CornerProblemState(new_world_state, new_corners.copy())
