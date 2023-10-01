@@ -1,10 +1,10 @@
 from lle import World
-from problem import SimpleSearchProblem
+from problem import SimpleSearchProblem, CornerSearchProblem, GemSearchProblem
 import search
 
 
-w = World.from_file("cartes/2_agents/zigzag")
-#w = World.from_file("level3")
+#w = World.from_file("cartes/2_agents/zigzag")
+w = World.from_file("level3")
 #w = World.from_file("level5")
 #w = World.from_file("level6")
 
@@ -12,7 +12,7 @@ w = World.from_file("cartes/2_agents/zigzag")
 
 print(w.world_string)
 
-problem = SimpleSearchProblem(w)
+problem = CornerSearchProblem(w)
 solution = search.astar(problem)
 
 if solution is None:

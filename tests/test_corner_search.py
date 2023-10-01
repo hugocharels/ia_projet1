@@ -5,6 +5,7 @@ from search import astar
 
 def test_corners_reached():
     world = World.from_file("cartes/corners")
+    #world = World.from_file("level3") 
     problem = CornerSearchProblem(world)
     solution = astar(problem)
     world.reset()
