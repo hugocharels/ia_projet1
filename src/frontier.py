@@ -92,7 +92,7 @@ class Node:
 		self.priority = priority
 
 	def __repr__(self):
-		return f"<Node {self.state}>"
+		return f"<Node {self.state}, {self.action}>"
 
 	def __key(self):
 		return (self.state)

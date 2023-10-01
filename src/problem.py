@@ -69,8 +69,9 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 	def get_successors(self, state: WorldState) -> Iterable[Tuple[WorldState, Tuple[Action, ...], float]]:
 		self.world.set_state(state)
 		if self.world.done: return []
-		#for action in product(*self.world.available_actions()):
-		for action in self._get_all_actions(self.world.available_actions()):
+		#if product(*self.world.available_actions()) != self._get_all_actions(self.world.available_actions()): print("ta mere")
+		#for action in self._get_all_actions(self.world.available_actions()):
+		for action in product(*self.world.available_actions()):
 			cost = self.world.step(action)
 			new_state = self.world.get_state()
 			yield (new_state, action, cost)
