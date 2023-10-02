@@ -37,7 +37,7 @@ def search(problem: SearchProblem, Frontier: type[Stack, Queue, Heap], is_useles
 	frontier = Frontier()
 	frontier.push(Node(None, problem.initial_state, None, 0))
 	visited = {problem.intinitial_state}
-        while not frontier.is_empty():
+	while not frontier.is_empty():
 		node = frontier.pop()
 		if problem.is_goal_state(node.state):
 			return Solution(actions=node.get_actions())
