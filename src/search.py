@@ -36,13 +36,13 @@ def are_opposite_move(prev_actions: tuple[Action, ...], next_actions: tuple[Acti
 def search(problem: SearchProblem, Frontier: type[Stack, Queue, Heap], is_useless=global_is_useless) -> Optional[Solution]:
 	frontier = Frontier()
 	frontier.push(Node(None, problem.initial_state, None, 0))
-	visited = {problem.intinitial_state}
+	visited = {problem.initial_state}
 	while not frontier.is_empty():
 		node = frontier.pop()
 		if problem.is_goal_state(node.state):
 			return Solution(actions=node.get_actions())
 		for state, action, cost in problem.get_successors(node.state):
-			#if is_useless(node.action, action): continue
+			if is_useless(node.action, action): continue
 			if state in visited: continue
 			visited.add(state)
 			next_node = Node(node, state, action, node.cost + problem.g(state, action, cost), node.cost + problem.f(state, action, cost))
