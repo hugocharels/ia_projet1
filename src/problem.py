@@ -35,6 +35,12 @@ class SearchProblem(ABC, Generic[T]):
 			- the cost of taking the action
 		"""
 
+	@staticmethod
+	def is_useless(actions: tuple[Action, ...]) -> bool:
+		for action in actions:
+			if action != Action.STAY: return False
+		return True
+
 	def _manhattan_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
 		return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
@@ -159,6 +165,7 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 		if self.world.done: return []
 		self.nodes_expanded += 1
 		for action in product(*self.world.available_actions()):
+			if self.is_useless(action): continue
 			cost = self.world.step(action)
 			new_state = self.world.get_state()
 			yield (state.get_new_state(new_state, self.corners), action, cost)
@@ -218,6 +225,7 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 		if self.world.done: return []
 		self.nodes_expanded += 1
 		for action in product(*self.world.available_actions()):
+			if self.is_useless(action): continue
 			cost = self.world.step(action)
 			new_state = self.world.get_state()
 			yield (GemProblemState(new_state, state), action, cost)
