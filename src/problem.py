@@ -240,4 +240,7 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 
 	def heuristic(self, state: GemProblemState) -> float:
 		"""The number of uncollected gems"""
-		return state.gems_remaining
+		# return state.gems_remaining
+		return state.gems_remaining if state.gems_rate < 1.0 else \
+				max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
+
