@@ -60,12 +60,15 @@ if __name__ == "__main__":
 
 
 maps = ["level1", "level2", "level3", "level4", "level5", "level6"]
-
 algos = [(astar, "astar")]
-
 problems = [(SimpleSearchProblem, "SimpleSearchProblem"), (CornerSearchProblem, "CornerSearchProblem"), (GemSearchProblem, "GemSearchProblem")]
 
+
+
+problems = [(SimpleSearchProblem, "SimpleSearchProblem")]
+#problems = [(CornerSearchProblem, "CornerSearchProblem")]
 #problems = [(GemSearchProblem, "GemSearchProblem")]
+maps = [maps[4]]
 
 for map in maps:
 	w = World.from_file(map)
@@ -84,5 +87,5 @@ for map in maps:
 			else:
 				print(f"Problem : {problem_name}")
 				print(f"{name}: {len(solution.actions)} actions, {problem.nodes_expanded} nodes expanded en {fin - debut} secondes")
-				#print(solution.actions)
+				print(solution.actions)
 				print()

@@ -36,12 +36,6 @@ class SearchProblem(ABC, Generic[T]):
 		"""
 
 	@staticmethod
-	def is_useless(actions: tuple[Action, ...]) -> bool:
-		for action in actions:
-			if action != Action.STAY: return False
-		return True
-
-	@staticmethod
 	def _manhattan_distance(pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
 		return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
@@ -124,8 +118,15 @@ class CornerProblemState(ProblemState):
 		return sum(self._corners)/4
 
 	@property
+	def corners_done(self) -> bool:
+		return sum(self._corners) == 4
+
+	@property
 	def on_corner(self):
 		return self._on_corner
+
+	def corner_done(self, idx: int):
+		return self._corners[idx]
 
 	def __key(self):
 		return (self._world_state, tuple(self._corners))
@@ -165,7 +166,6 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 		if self.world.done: return []
 		self.nodes_expanded += 1
 		for action in product(*self.world.available_actions()):
-			if self.is_useless(action): continue
 			cost = self.world.step(action)
 			new_state = self.world.get_state()
 			yield (state.get_new_state(new_state, self.corners), action, cost)
@@ -177,10 +177,7 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 
 	@override(SearchProblem)
 	def heuristic(self, state: CornerProblemState) -> float:
-		return max(min(self._manhattan_distance(agent, corner) for corner in self.corners) for agent in state.agents_positions) \
-				if state.corners_rate < 1.0 else \
-				max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
-
+		return max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions) if state.corners_done else max(min(self._manhattan_distance(agent, self.corners[i]) if not state.corner_done(i) else float('inf') for i in range(len(self.corners))) for agent in state.agents_positions)
 
 class GemProblemState(ProblemState):
 	
@@ -201,11 +198,14 @@ class GemProblemState(ProblemState):
 	def gems_remaining(self):
 		return len(self._world_state.gems_collected) - sum(self._world_state.gems_collected)
 
-	def __hash__(self):
-		return super.__hash__(self)
+	def __key(self):
+		return self._world_state
 
-	def __eq__(self):
-		return super.__eq__(self)
+	def __hash__(self):
+		return hash(self.__key())
+
+	def __eq__(self, other):
+		return isinstance(other, GemProblemState) and self.__key() == other.__key()
 
 	def __repr__(self):
 		return f"<GemProblemState {self._world_state}>"
@@ -226,7 +226,6 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 		if self.world.done: return []
 		self.nodes_expanded += 1
 		for action in product(*self.world.available_actions()):
-			if self.is_useless(action): continue
 			cost = self.world.step(action)
 			new_state = self.world.get_state()
 			yield (GemProblemState(new_state, state), action, cost)
@@ -235,13 +234,13 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 	@override(SearchProblem)
 	def g(self, state: GemProblemState, actions: tuple[Action, ...], cost: float) -> float:
 		#return 1
-		
+		#"""
 		win = -500 if self.is_goal_state(state) else 0
 		step = 0
 		for action in actions: 
 			if action != Action.STAY: step += 1
 		return win - 10 * state.gems_got + 1 * step
-		
+		#"""
 
 	@override(SearchProblem)
 	def heuristic(self, state: GemProblemState) -> float:
