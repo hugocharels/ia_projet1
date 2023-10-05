@@ -119,10 +119,10 @@ class ProblemState(ABC):
 
 
 class CornerProblemState(ProblemState):
-	def __init__(self, world_state: WorldState, corners: list[bool, bool, bool, bool]=[False,False,False,False]):
+	def __init__(self, world_state: WorldState, corners: list[bool, bool, bool, bool]=[False,False,False,False], on_corner: int=0):
 		super().__init__(world_state)
 		self._corners = corners
-		self._on_corner = False
+		self._on_corner = on_corner
 
 	@property
 	def corners_rate(self) -> float:
@@ -146,11 +146,12 @@ class CornerProblemState(ProblemState):
 
 	def get_new_state(self, new_world_state, corners_pos):
 		new_corners = self._corners
+		on_corner = 0
 		for i in range(len(corners_pos)):
 			if corners_pos[i] in self._world_state.agents_positions:
-				if new_corners[i] == False: self._on_corner = True
+				if new_corners[i] == False: on_corner += 1
 				new_corners[i] = True
-		return CornerProblemState(new_world_state, new_corners.copy())
+		return CornerProblemState(new_world_state, new_corners.copy(), on_corner)
 
 
 class CornerSearchProblem(SearchProblem[CornerProblemState]):
