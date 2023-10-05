@@ -1,8 +1,11 @@
 from lle import World
 from problem import SimpleSearchProblem, CornerSearchProblem, GemSearchProblem
 from search import dfs, bfs, astar
+import cv2
 
 from time import time
+
+"""
 import sys
 
 def select_problem(world, choice):
@@ -26,8 +29,6 @@ if __name__ == "__main__":
 	print("2 = Corner")
 	print("3 = Gems")
 	choice = input("Entrez votre choix: ")
-
-	
 
 	algos = [(dfs, "dfs"), (bfs, "bfs"), (astar, "astar")]
 	algos = [(astar, "astar")]
@@ -55,3 +56,33 @@ if __name__ == "__main__":
 			print(f"{name}: {len(solution.actions)} d'actions, {problem.nodes_expanded} nodes expanded en {fin - debut} secondes")
 			print()
 
+"""
+
+
+maps = ["level1", "level2", "level3", "level4", "level5", "level6"]
+
+algos = [(astar, "astar")]
+
+problems = [(SimpleSearchProblem, "SimpleSearchProblem"), (CornerSearchProblem, "CornerSearchProblem"), (GemSearchProblem, "GemSearchProblem")]
+
+#problems = [(GemSearchProblem, "GemSearchProblem")]
+
+for map in maps:
+	w = World.from_file(map)
+	print("Carte : " + map)
+	#img = w.get_image()
+	#cv2.imwrite(map + '.png', img)
+	print()
+	for algo, name in algos:
+		for problem, problem_name in problems:
+			problem = problem(w)
+			debut = time()
+			solution = algo(problem)
+			fin = time()
+			if solution is None:
+				print(f"{name}: No solution found")
+			else:
+				print(f"Problem : {problem_name}")
+				print(f"{name}: {len(solution.actions)} actions, {problem.nodes_expanded} nodes expanded en {fin - debut} secondes")
+				#print(solution.actions)
+				print()

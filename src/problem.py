@@ -77,13 +77,8 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 			self.world.set_state(state)
 
 	@override(SearchProblem)
-	def g(self, state: WorldState, actions: tuple[Action,...], cost: float) -> float:
-		win = -500 if self.is_goal_state(state) else 0
-		step = 0
-		for action in actions: 
-			if action != Action.STAY: step += 1
-		#return win - cost + step
-		return win - 1 * cost + step
+	def g(self, state: WorldState, actions: tuple[Action, ...], cost: float) -> float:
+		return 1
 
 	@override(SearchProblem)
 	def heuristic(self, state: WorldState) -> float:
@@ -178,11 +173,7 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 
 	@override(SearchProblem)
 	def g(self, state: CornerProblemState, actions: tuple[Action, ...], cost: float) -> float:
-		win = -500 if self.is_goal_state(state) else 0
-		step = 0
-		for action in actions: 
-			if action != Action.STAY: step += 1
-		return win - 10 * state.on_corner + 1 * step
+		return 1
 
 	@override(SearchProblem)
 	def heuristic(self, state: CornerProblemState) -> float:
@@ -242,12 +233,15 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 			self.world.set_state(state.world_state)
 
 	@override(SearchProblem)
-	def g(self, state: CornerProblemState, actions: tuple[Action, ...], cost: float) -> float:
+	def g(self, state: GemProblemState, actions: tuple[Action, ...], cost: float) -> float:
+		#return 1
+		
 		win = -500 if self.is_goal_state(state) else 0
 		step = 0
 		for action in actions: 
 			if action != Action.STAY: step += 1
 		return win - 10 * state.gems_got + 1 * step
+		
 
 	@override(SearchProblem)
 	def heuristic(self, state: GemProblemState) -> float:
