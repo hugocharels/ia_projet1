@@ -28,7 +28,7 @@ def search(problem: SearchProblem, Frontier: type[Stack, Queue, Heap]) -> Option
 		for state, action, cost in problem.get_successors(node.state):
 			if state in visited: continue
 			visited.add(state)
-			next_node = Node(node, state, action, node.cost + problem.g(state, action, cost), node.cost + problem.f(state, action, cost))
+			next_node = Node(node, state, action, node.cost + problem.g(state, cost), node.cost + problem.f(state, cost))
 			frontier.push(next_node)
 	return None
 
