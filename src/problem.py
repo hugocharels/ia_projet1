@@ -42,12 +42,13 @@ class SearchProblem(ABC, Generic[T]):
 	def f(self, problem_state: T, cost: float):
 		return self.g(problem_state, cost) + self.heuristic(problem_state)
 
-	def g(self, problem_state, cost: float) -> float:
+	def g(self, problem_state: T, cost: float) -> float:
 		"""The cost of reaching the given state"""
 		return 1 - cost
 
-	def heuristic(self, problem_state: T) -> float:
-		return 0.0
+	def heuristic(self, state: T) -> float:
+		"""Manhattan distance for each agent to the closest exit"""
+		return max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
 
 
 class SimpleSearchProblem(SearchProblem[WorldState]):
@@ -68,12 +69,6 @@ class SimpleSearchProblem(SearchProblem[WorldState]):
 			new_state = self.world.get_state()
 			yield (new_state, action, cost)
 			self.world.set_state(state)
-
-	@override(SearchProblem)
-	def heuristic(self, state: WorldState) -> float:
-		"""Manhattan distance for each agent to the closest exit"""
-		return max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
-
 
 class ProblemState(ABC):
 	"""A problem state is a state that can be used by a search algorithm"""
@@ -102,7 +97,7 @@ class ProblemState(ABC):
 		return f"<ProblemState {self._world_state}>"
 
 
-class CornerProblemState(ProblemState):
+class CornerProblemState(ProblemState)
 	def __init__(self, world_state: WorldState, corners: list[bool, bool, bool, bool]=[False,False,False,False]):
 		super().__init__(world_state)
 		self._corners = corners
@@ -160,7 +155,7 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 
 	@override(SearchProblem)
 	def heuristic(self, state: CornerProblemState) -> float:
-		return max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions) if state.corners_done else max(min(self._manhattan_distance(agent, self.corners[i]) if not state.corner_done(i) else float('inf') for i in range(len(self.corners))) for agent in state.agents_positions)
+		return max(min(self._manhattan_distance(agent, self.corners[i]) if not state.corner_done(i) else float('inf') for i in range(len(self.corners))) for agent in state.agents_positions) if not state.corners_done else super().heuristic(state)
 
 class GemProblemState(ProblemState):
 	
@@ -209,5 +204,4 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 
 	@override(SearchProblem)
 	def heuristic(self, state: GemProblemState) -> float:
-		return 10 * state.gems_remaining if not state.gems_done else \
-				max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
+		return 10 * state.gems_remaining if not state.gems_done else super().heuristic(state)
