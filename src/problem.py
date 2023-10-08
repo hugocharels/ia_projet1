@@ -233,8 +233,8 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 		n_agents = len(state.agents_positions)
 		if state.gems_done: return super().heuristic(state)
 		unvisited_gems = [self.world.gems[i][0] for i in range(len(self.world.gems)) if not state.world_state.gems_collected[i]]
-		h = min(min(self._manhattan_distance(agent, unvisited_gems[i]) for i in range(len(unvisited_gems))) for agent in state.agents_positions)
+		h = max(min(self._manhattan_distance(agent, unvisited_gems[i]) for i in range(len(unvisited_gems))) for agent in state.agents_positions)
 		h += ceil((len(unvisited_gems) - 1) / n_agents)
-		h += min(min(self._manhattan_distance(unvisited_gem, exit_pos) for unvisited_gem in unvisited_gems) for exit_pos in self.world.exit_pos)
+		h += min(max(self._manhattan_distance(unvisited_gem, exit_pos) for unvisited_gem in unvisited_gems) for exit_pos in self.world.exit_pos)
 		return h
 

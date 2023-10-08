@@ -22,7 +22,6 @@ def search(problem: SearchProblem, Frontier: type[Stack, Queue, Heap]) -> Option
 	visited = {problem.initial_state}
 	while not frontier.is_empty():
 		node = frontier.pop()
-		#print("g(n) =", node.cost, "h(n) =", node.priority - node.cost, "f(n) =", node.priority)
 		if problem.is_goal_state(node.state):
 			return Solution(actions=node.get_actions())
 		for state, action, cost in problem.get_successors(node.state):
