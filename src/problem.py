@@ -21,12 +21,20 @@ class SearchProblem(ABC, Generic[T]):
 		self.initial_state = world.get_state()
 		self.nodes_expanded = 0
 
-	@abstractmethod
 	def is_goal_state(self, problem_state: T) -> bool:
 		"""Whether the given state is the goal state"""
+		self.world.set_state(problem_state)
+		return self.world.exit_rate == 1.0	
 
 	@abstractmethod
-	def get_successors(self, state: T) -> Iterable[Tuple[T, Tuple[Action, ...], float]]:
+	def set_state(self, problem_state: T):
+		"""Set the world state to the given state"""
+
+	@abstractmethod
+	def get_state(self, old_problem_state: T) -> T:
+		"""Get the current world state"""
+
+	def get_successors(self, problem_state: T) -> Iterable[Tuple[T, Tuple[Action, ...], float]]:
 		"""
 		Yield all possible states that can be reached from the given world state.
 		Returns
@@ -34,6 +42,14 @@ class SearchProblem(ABC, Generic[T]):
 			- the joint action that was taken to reach it
 			- the cost of taking the action
 		"""
+		self.set_state(problem_state)
+		if self.world.done: return []
+		self.nodes_expanded += 1
+		#self.set_state(state)
+		for action in product(*self.world.available_actions()):
+			cost = self.world.step(action)
+			yield (self.get_state(problem_state), action, cost)
+			self.set_state(problem_state)
 
 	@staticmethod
 	def _manhattan_distance(pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
@@ -46,29 +62,20 @@ class SearchProblem(ABC, Generic[T]):
 		"""The cost of reaching the given state"""
 		return 1 - cost
 
-	def heuristic(self, state: T) -> float:
+	def heuristic(self, problem_state: T) -> float:
 		"""Manhattan distance for each agent to the closest exit"""
-		return max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in state.agents_positions)
+		return max(min(self._manhattan_distance(agent, exit) for exit in self.world.exit_pos) for agent in problem_state.agents_positions)
 
 
 class SimpleSearchProblem(SearchProblem[WorldState]):
 
 	@override(SearchProblem)
-	def is_goal_state(self, state: WorldState) -> bool:
+	def set_state(self, state: WorldState):
 		self.world.set_state(state)
-		return self.world.exit_rate == 1.0
 
 	@override(SearchProblem)
-	def get_successors(self, state: WorldState) -> Iterable[Tuple[WorldState, Tuple[Action, ...], float]]:
-		self.world.set_state(state)
-		if self.world.done: return []
-		self.nodes_expanded += 1
-		self.world.set_state(state)
-		for action in product(*self.world.available_actions()):
-			cost = self.world.step(action)
-			new_state = self.world.get_state()
-			yield (new_state, action, cost)
-			self.world.set_state(state)
+	def get_state(self, _: WorldState) -> WorldState:
+		return self.world.get_state()
 
 class ProblemState(ABC):
 	"""A problem state is a state that can be used by a search algorithm"""
@@ -97,7 +104,7 @@ class ProblemState(ABC):
 		return f"<ProblemState {self._world_state}>"
 
 
-class CornerProblemState(ProblemState)
+class CornerProblemState(ProblemState):
 	def __init__(self, world_state: WorldState, corners: list[bool, bool, bool, bool]=[False,False,False,False]):
 		super().__init__(world_state)
 		self._corners = corners
@@ -140,18 +147,15 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 
 	@override(SearchProblem)
 	def is_goal_state(self, state: CornerProblemState) -> bool:
-		return state.corners_rate == 1.0 and SimpleSearchProblem(self.world).is_goal_state(state.world_state)
+		return state.corners_done and super().is_goal_state(state.world_state)
 
 	@override(SearchProblem)
-	def get_successors(self, state: CornerProblemState) -> Iterable[Tuple[CornerProblemState, Action, float]]:
+	def set_state(self, state: CornerProblemState):
 		self.world.set_state(state.world_state)
-		if self.world.done: return []
-		self.nodes_expanded += 1
-		for action in product(*self.world.available_actions()):
-			cost = self.world.step(action)
-			new_state = self.world.get_state()
-			yield (state.get_new_state(new_state, self.corners), action, cost)
-			self.world.set_state(state.world_state)
+
+	@override(SearchProblem)
+	def get_state(self, state: CornerProblemState) -> CornerProblemState:
+		return state.get_new_state(self.world.get_state(), self.corners)
 
 	@override(SearchProblem)
 	def heuristic(self, state: CornerProblemState) -> float:
@@ -189,18 +193,15 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 
 	@override(SearchProblem)
 	def is_goal_state(self, state: GemProblemState) -> bool:
-		return state.gems_done and SimpleSearchProblem(self.world).is_goal_state(state.world_state)
+		return state.gems_done and super().is_goal_state(state.world_state)
 
 	@override(SearchProblem)
-	def get_successors(self, state: GemProblemState) -> Iterable[Tuple[GemProblemState, Action, float]]:
+	def set_state(self, state: GemProblemState):
 		self.world.set_state(state.world_state)
-		if self.world.done: return []
-		self.nodes_expanded += 1
-		for action in product(*self.world.available_actions()):
-			cost = self.world.step(action)
-			new_state = self.world.get_state()
-			yield (GemProblemState(new_state), action, cost)
-			self.world.set_state(state.world_state)
+
+	@override(SearchProblem)
+	def get_state(self, state: GemProblemState) -> GemProblemState:
+		return GemProblemState(self.world.get_state())
 
 	@override(SearchProblem)
 	def heuristic(self, state: GemProblemState) -> float:
