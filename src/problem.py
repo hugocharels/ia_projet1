@@ -237,3 +237,4 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 		h += ceil((len(unvisited_gems) - 1) / n_agents)
 		h += min(min(self._manhattan_distance(unvisited_gem, exit_pos) for unvisited_gem in unvisited_gems) for exit_pos in self.world.exit_pos)
 		return h
+

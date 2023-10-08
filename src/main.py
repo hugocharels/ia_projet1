@@ -67,10 +67,10 @@ problems = [(SimpleSearchProblem, "SimpleSearchProblem"), (CornerSearchProblem, 
 
 #problems = [(SimpleSearchProblem, "SimpleSearchProblem")]
 #problems = [(CornerSearchProblem, "CornerSearchProblem")]
-#problems = [(GemSearchProblem, "GemSearchProblem")]
+problems = [(GemSearchProblem, "GemSearchProblem")]
 maps = [maps[2]]
-#algos = [(astar, "astar")]
-#maps = ["cartes/gems"]
+algos = [(astar, "astar")]
+maps = ["cartes/gems"]
 
 for map in maps:
 	w = World.from_file(map)
