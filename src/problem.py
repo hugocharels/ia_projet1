@@ -157,9 +157,26 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 	def get_state(self, state: CornerProblemState) -> CornerProblemState:
 		return state.get_new_state(self.world.get_state(), self.corners)
 
+	"""
 	@override(SearchProblem)
 	def heuristic(self, state: CornerProblemState) -> float:
 		return max(min(self._manhattan_distance(agent, self.corners[i]) if not state.corner_done(i) else float('inf') for i in range(len(self.corners))) for agent in state.agents_positions) if not state.corners_done else super().heuristic(state)
+	"""
+
+	@override(SearchProblem)
+	def heuristic(self, state: CornerProblemState) -> float:
+		"""
+		Calculates the shortest distance to go one time to each corner not visited and then on the exit
+		"""
+		n_agents = len(state.agents_positions)
+		if state.corners_done: return super().heuristic(state)
+		unvisited_corners = [self.corners[i] for i in range(len(self.corners)) if not state.corner_done(i)]
+		h = max(min(self._manhattan_distance(agent, self.corners[i]) if not state.corner_done(i) else float('inf') for i in range(len(self.corners))) for agent in state.agents_positions)
+		if len(unvisited_corners) > 1:
+			h += (self._manhattan_distance(unvisited_corners[0], unvisited_corners[1]) * (len(unvisited_corners) - 1)) / n_agents
+		h += min(self._manhattan_distance(unvisited_corner, exit_pos) for unvisited_corner in unvisited_corners for exit_pos in self.world.exit_pos)
+		return h
+
 
 class GemProblemState(ProblemState):
 	

@@ -60,16 +60,17 @@ if __name__ == "__main__":
 
 
 maps = ["level1", "level2", "level3", "level4", "level5", "level6"]
-algos = [(astar, "astar")]
+algos = [(dfs, "dfs"), (bfs, "bfs"), (astar, "astar")]
 problems = [(SimpleSearchProblem, "SimpleSearchProblem"), (CornerSearchProblem, "CornerSearchProblem"), (GemSearchProblem, "GemSearchProblem")]
 
 
 
 #problems = [(SimpleSearchProblem, "SimpleSearchProblem")]
-#problems = [(CornerSearchProblem, "CornerSearchProblem")]
+problems = [(CornerSearchProblem, "CornerSearchProblem")]
 #problems = [(GemSearchProblem, "GemSearchProblem")]
-maps = [maps[2]]
-#algos = [(dfs, "dfs"), (bfs, "bfs"), (astar, "astar")]
+#maps = [maps[2]]
+algos = [(astar, "astar")]
+#maps = ["cartes/corners"]
 
 for map in maps:
 	w = World.from_file(map)
