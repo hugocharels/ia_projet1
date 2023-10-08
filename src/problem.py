@@ -3,6 +3,7 @@ from typing import Tuple, Iterable, Generic, TypeVar
 from lle import World, Action, WorldState
 from frontier import override, Node
 
+from math import ceil
 from itertools import product
 
 T = TypeVar("T")
@@ -171,7 +172,7 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 		n_agents = len(state.agents_positions)
 		if state.corners_done: return super().heuristic(state)
 		unvisited_corners = [self.corners[i] for i in range(len(self.corners)) if not state.corner_done(i)]
-		h = max(min(self._manhattan_distance(agent, self.corners[i]) if not state.corner_done(i) else float('inf') for i in range(len(self.corners))) for agent in state.agents_positions)
+		h = max(min(self._manhattan_distance(agent, unvisited_corners[i]) for i in range(len(unvisited_corners))) for agent in state.agents_positions)
 		if len(unvisited_corners) > 1:
 			h += (self._manhattan_distance(unvisited_corners[0], unvisited_corners[1]) * (len(unvisited_corners) - 1)) / n_agents
 		h += min(self._manhattan_distance(unvisited_corner, exit_pos) for unvisited_corner in unvisited_corners for exit_pos in self.world.exit_pos)
@@ -221,5 +222,18 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 		return GemProblemState(self.world.get_state())
 
 	@override(SearchProblem)
+	def g(self, state: GemProblemState, _):
+		return 1
+
+	@override(SearchProblem)
 	def heuristic(self, state: GemProblemState) -> float:
-		return 10 * state.gems_remaining if not state.gems_done else super().heuristic(state)
+		"""
+		Calculates the shortest distance to go one time to each gem not visited and then on the exit
+		"""
+		n_agents = len(state.agents_positions)
+		if state.gems_done: return super().heuristic(state)
+		unvisited_gems = [self.world.gems[i][0] for i in range(len(self.world.gems)) if not state.world_state.gems_collected[i]]
+		h = min(min(self._manhattan_distance(agent, unvisited_gems[i]) for i in range(len(unvisited_gems))) for agent in state.agents_positions)
+		h += ceil((len(unvisited_gems) - 1) / n_agents)
+		h += min(min(self._manhattan_distance(unvisited_gem, exit_pos) for unvisited_gem in unvisited_gems) for exit_pos in self.world.exit_pos)
+		return h
