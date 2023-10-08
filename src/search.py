@@ -110,7 +110,6 @@ class Node:
 		while node.parent is not None:
 			actions.append(node.action)
 			node = node.parent
-			print(f"g(n)={node.cost}, h(n)= {node.priority - node.cost}")
 		return list(reversed(actions))
 
 
