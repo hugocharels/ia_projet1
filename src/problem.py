@@ -1,13 +1,18 @@
 from abc import ABC, abstractmethod
 from typing import Tuple, Iterable, Generic, TypeVar
 from lle import World, Action, WorldState
-from frontier import override, Node
-
 from math import ceil
 from itertools import product
 
+
 T = TypeVar("T")
 
+""" Override decorator """
+def override(abstract_class):
+	def overrider(method):
+		assert(method.__name__ in dir(abstract_class))
+		return method
+	return overrider
 
 class SearchProblem(ABC, Generic[T]):
 	"""
@@ -46,7 +51,6 @@ class SearchProblem(ABC, Generic[T]):
 		self.set_state(problem_state)
 		if self.world.done: return []
 		self.nodes_expanded += 1
-		#self.set_state(state)
 		for action in product(*self.world.available_actions()):
 			cost = self.world.step(action)
 			yield (self.get_state(problem_state), action, cost)
@@ -158,12 +162,6 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 	def get_state(self, state: CornerProblemState) -> CornerProblemState:
 		return state.get_new_state(self.world.get_state(), self.corners)
 
-	"""
-	@override(SearchProblem)
-	def heuristic(self, state: CornerProblemState) -> float:
-		return max(min(self._manhattan_distance(agent, self.corners[i]) if not state.corner_done(i) else float('inf') for i in range(len(self.corners))) for agent in state.agents_positions) if not state.corners_done else super().heuristic(state)
-	"""
-
 	@override(SearchProblem)
 	def heuristic(self, state: CornerProblemState) -> float:
 		"""
@@ -177,7 +175,6 @@ class CornerSearchProblem(SearchProblem[CornerProblemState]):
 			h += (self._manhattan_distance(unvisited_corners[0], unvisited_corners[1]) * (len(unvisited_corners) - 1)) / n_agents
 		h += min(self._manhattan_distance(unvisited_corner, exit_pos) for unvisited_corner in unvisited_corners for exit_pos in self.world.exit_pos)
 		return h
-
 
 class GemProblemState(ProblemState):
 	
@@ -234,7 +231,6 @@ class GemSearchProblem(SearchProblem[GemProblemState]):
 		if state.gems_done: return super().heuristic(state)
 		unvisited_gems = [self.world.gems[i][0] for i in range(len(self.world.gems)) if not state.world_state.gems_collected[i]]
 		h = max(min(self._manhattan_distance(agent, unvisited_gems[i]) for i in range(len(unvisited_gems))) for agent in state.agents_positions)
-		h += ceil((len(unvisited_gems) - 1) / n_agents)
+		h += ceil((len(unvisited_gems)-1) / n_agents)
 		h += min(max(self._manhattan_distance(unvisited_gem, exit_pos) for unvisited_gem in unvisited_gems) for exit_pos in self.world.exit_pos)
 		return h
-

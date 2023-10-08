@@ -67,10 +67,10 @@ problems = [(SimpleSearchProblem, "SimpleSearchProblem"), (CornerSearchProblem, 
 
 #problems = [(SimpleSearchProblem, "SimpleSearchProblem")]
 #problems = [(CornerSearchProblem, "CornerSearchProblem")]
-problems = [(GemSearchProblem, "GemSearchProblem")]
+#problems = [(GemSearchProblem, "GemSearchProblem")]
 maps = [maps[2]]
 algos = [(astar, "astar")]
-maps = ["cartes/gems"]
+#maps = ["cartes/gems"]
 
 for map in maps:
 	w = World.from_file(map)
@@ -89,12 +89,12 @@ for map in maps:
 			else:
 				print(f"Problem : {problem_name}")
 				print(f"{name}: {len(solution.actions)} actions, {problem.nodes_expanded} nodes expanded en {fin - debut} secondes")
-				#"""
+				"""
 				w.reset()
 				for action in solution.actions:
 					w.step(action)
 					cv2.imshow("Visu", w.get_image())
 					cv2.waitKey(500)
-				#"""
+				"""
 				#print(solution.actions)
 				print()
